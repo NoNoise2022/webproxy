@@ -41,3 +41,13 @@ int main(int argc, char **argv) {
     Close(connfd);  // line:netp:tiny:close
   }
 }
+
+void doit(int fd)
+{
+  //
+  if (strcasecmp(method, "GET"))
+  {
+    clienterror(fd, filename, "403", "Forbidden", "Tiny couldn't read the file");
+    return;
+  }
+}
