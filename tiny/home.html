@@ -1,7 +1,41 @@
-<html>
+<!-- <html>
 <head><title>test</title></head>
 <body> 
 <img align="middle" src="godzilla.gif">
 Dave O'Hallaron
 </body>
+</html> -->
+
+
+<html>
+
+<head>
+    <title>test</title>
+    <script>
+        function urlparam(url, num1, num2) {
+            let n1 = document.getElementById('number1');
+            let n2 = document.getElementById('number2');
+            console.log(n1);
+            let newurl = url + '?' + n1 + n2;
+        }
+    </script>
+</head>
+
+<body>
+    <img align="middle" src="godzilla.gif">
+    <img align="middle" src="blob-clap.gif">
+    <p>Dave O'Hallaron</p>
+    <form action="cgi-bin/adder" method="get">
+        <ol>
+            number1 : <input type="text" name="number1"><br>
+            number2 : <input type="text" name="number2"><br>
+        </ol>
+        <input type="submit">
+    </form>
+
+    <p>
+        <video src="christmas.mp4" controls></video>
+    </p>
+</body>
+
 </html>
