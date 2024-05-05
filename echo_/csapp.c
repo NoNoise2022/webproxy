@@ -1046,6 +1046,8 @@ int open_listenfd(char *port)
 /****************************************************
  * Wrappers for reentrant protocol-independent helpers
  ****************************************************/
+
+/*
 int Open_clientfd(char *hostname, char *port) 
 {
     int rc;
@@ -1054,6 +1056,48 @@ int Open_clientfd(char *hostname, char *port)
 	unix_error("Open_clientfd error");
     return rc;
 }
+*/
+
+/* $begin open_clientfd */
+int Open_clientfd(char *hostname, char *port) {
+    int clientfd, rc;
+    struct addrinfo hints, *listp, *p;
+
+    /* Get a list of potential server addresses */
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_socktype = SOCK_STREAM;  /* Open a connection */
+    hints.ai_flags = AI_NUMERICSERV;  /* ... using a numeric port arg. */
+    hints.ai_flags |= AI_ADDRCONFIG;  /* Recommended for connections */
+    if ((rc = getaddrinfo(hostname, port, &hints, &listp)) != 0) {
+        fprintf(stderr, "getaddrinfo failed (%s:%s): %s\n", hostname, port, gai_strerror(rc));
+        return -2;
+    }
+  
+    /* Walk the list for one that we can successfully connect to */
+    for (p = listp; p; p = p->ai_next) {
+        /* Create a socket descriptor */
+        if ((clientfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0) 
+            continue; /* Socket failed, try the next */
+
+        /* Connect to the server */
+        if (connect(clientfd, p->ai_addr, p->ai_addrlen) != -1) 
+            break; /* Success */
+        if (close(clientfd) < 0) { /* Connect failed, try another */  //line:netp:openclientfd:closefd
+            fprintf(stderr, "open_clientfd: close failed: %s\n", strerror(errno));
+            return -1;
+        } 
+    } 
+
+    /* Clean up */
+    freeaddrinfo(listp);
+    if (!p) /* All connects failed */
+        return -1;
+    else    /* The last connect succeeded */
+        return clientfd;
+}
+
+
+
 
 int Open_listenfd(char *port) 
 {
