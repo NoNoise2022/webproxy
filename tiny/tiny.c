@@ -58,11 +58,21 @@ void doit(int fd)
   printf("%s", buf);
   sscanf(buf, "%s %s %s", method, uri, version);
 
-  if (strcasecmp(method, "GET")){
+  if(strcmp(method, "GET") && strcmp(method, "HEAD"))
+  {
     clienterror(fd, method, "501", "Not Implemented",
                 "Tiny does not implement this method");
     return;
   }
+  /*
+  if (strcasecmp(method, "GET"))
+  {
+    clienterror(fd, method, "501", "Not Implemented",
+                "Tiny does not implement this method");
+    return;
+  }
+  */
+
   read_requesthdrs(&rio);
  
   /* Parse URI from GET request */
@@ -193,6 +203,15 @@ void serve_static(int fd, char *filename, int filesize)
   printf("%s", buf);
 
   
+  if (!strcmp(method, "GET")) 
+  {
+	  srcfd = Open(filename, O_RDONLY, 0);
+    srcp = (char *)malloc(sizeof(filesize));
+    Rio_readn(srcfd, srcp, filesize);
+    Close(srcfd);
+    Rio_writen(fd, srcp, filesize);
+    free(srcp);
+  }
   // if (strcasecmp(method, "HEAD") == 0) return; 
 
   /* Open the file and read its content */
