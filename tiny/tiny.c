@@ -58,7 +58,7 @@ void doit(int fd)
   printf("%s", buf);
   sscanf(buf, "%s %s %s", method, uri, version);
 
-  if (strcasecmp(method, "GET")){
+  if (strcasecmp(method, "GET") * strcasecmp(method, "HEAD")){
     clienterror(fd, method, "501", "Not Implemented",
                 "Tiny does not implement this method");
     return;
@@ -179,27 +179,21 @@ void serve_static(int fd, char *filename, int filesize)
   //
   srcp = (char *)Malloc(filesize);
   //
-
   /* Send response headers to client */
   get_filetype(filename, filetype);
   sprintf(buf, "HTTP/1.0 200 OK\r\n");
+
   sprintf(buf, "%sServer: Tiny Web Server\r\n", buf);
-
   sprintf(buf, "%sConnection: close\r\n", buf);
-
   sprintf(buf, "%sContent-length: %d\r\n", buf, filesize);
   sprintf(buf, "%sContent-type: %s\r\n\r\n", buf, filetype);
+
   Rio_writen(fd, buf, strlen(buf));
   printf("Response headers:\n");
   printf("%s", buf);
 
-  /* Send response body to client 
-  srcfd = Open(filename, O_RDONLY, 0);
-  srcp = Mmap(0, filesize, PROT_READ, MAP_PRIVATE, srcfd, 0);
-  Close(srcfd);
-  Rio_writen(fd, srcp, filesize);
-  Munmap(srcp, filesize);
-  */
+  
+  if (strcasecmp(method, "HEAD") == 0) return; 
 
   /* Open the file and read its content */
   srcfd = Open(filename, O_RDONLY, 0);
