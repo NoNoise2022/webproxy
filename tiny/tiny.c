@@ -175,6 +175,10 @@ void serve_static(int fd, char *filename, int filesize)
 {
   int srcfd;
   char *srcp, filetype[MAXLINE], buf[MAXBUF];
+  
+  //
+  srcp = (char *)Malloc(filesize);
+  //
 
   /* Send response headers to client */
   get_filetype(filename, filetype);
@@ -189,12 +193,23 @@ void serve_static(int fd, char *filename, int filesize)
   printf("Response headers:\n");
   printf("%s", buf);
 
-  /* Send response body to client */
+  /* Send response body to client 
   srcfd = Open(filename, O_RDONLY, 0);
   srcp = Mmap(0, filesize, PROT_READ, MAP_PRIVATE, srcfd, 0);
   Close(srcfd);
   Rio_writen(fd, srcp, filesize);
   Munmap(srcp, filesize);
+  */
+
+  /* Open the file and read its content */
+  srcfd = Open(filename, O_RDONLY, 0);
+  Rio_readn(srcfd, srcp, filesize); // Read file content into memory
+  Close(srcfd);
+  /* Send response body to client */
+  Rio_writen(fd, srcp, filesize);
+  /* Free dynamically allocated memory */
+  free(srcp);
+
 }
 
 void serve_dynamic(int fd, char *filename, char *cgiargs)
