@@ -94,7 +94,7 @@ void doit(int fd)
       return;
     }
     //일반파일, 읽기권한이 있다면, serve_static 실행
-    serve_static(fd, filename, sbuf.st_size);
+    serve_static(fd, filename, sbuf.st_size, method);
   }
   //동적 컨텐츠를 요청 받았다면, 
   else
