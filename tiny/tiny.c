@@ -224,22 +224,6 @@ void get_filetype(char *filename, char *filetype)
     strcpy(filetype, "text/html");
   else if (strstr(filename, ".gif"))
     strcpy(filetype, "image/gif");
-  else if (strstr(filename, ".png"))
-    strcpy(filetype, "image/png");
-  else if (strstr(filename, ".jpg"))
-    strcpy(filetype, "image/jpeg");
-  else
-    strcpy(filetype, "text/plain");
-}
-
-
-/*
-void get_filetype(char *filename, char *filetype)
-{
-  if (strstr(filename, ".html"))
-    strcpy(filetype, "text/html");
-  else if (strstr(filename, ".gif"))
-    strcpy(filetype, "image/gif");
   else if (strstr(filename, ".jpg"))
     strcpy(filetype, "image/jpeg");
   else if (strstr(filename, ".png"))
@@ -250,7 +234,11 @@ void get_filetype(char *filename, char *filetype)
     strcpy(filetype, "application/javascript");
   else if (strstr(filename, ".ico"))
     strcpy(filetype, "image/x-icon");
+  
+  else if (strstr(filename, ".mp4"))
+    strcpy(filetype, "video/mp4");
+  else if (strstr(filename, ".mpg"))
+    strcpy(filetype, "video/mpeg");
   else
     strcpy(filetype, "text/plain");
 }
-*/
