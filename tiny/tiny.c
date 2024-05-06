@@ -11,7 +11,7 @@
 void doit(int fd);
 void read_requesthdrs(rio_t *rp);
 int parse_uri(char *uri, char *filename, char *cgiargs);
-void serve_static(int fd, char *filename, int filesize, char *method);
+void serve_static(int fd, char *filename, int filesize);
 void get_filetype(char *filename, char *filetype);
 void serve_dynamic(int fd, char *filename, char *cgiargs);
 void clienterror(int fd, char *cause, char *errnum, char *shortmsg,
@@ -171,7 +171,7 @@ int parse_uri(char *uri, char *filename, char *cgiargs)
   }
 }
 
-void serve_static(int fd, char *filename, int filesize, char *method)
+void serve_static(int fd, char *filename, int filesize)
 {
   int srcfd;
   char *srcp, filetype[MAXLINE], buf[MAXBUF];
@@ -193,7 +193,7 @@ void serve_static(int fd, char *filename, int filesize, char *method)
   printf("%s", buf);
 
   
-  if (strcasecmp(method, "HEAD") == 0) return; 
+  // if (strcasecmp(method, "HEAD") == 0) return; 
 
   /* Open the file and read its content */
   srcfd = Open(filename, O_RDONLY, 0);
