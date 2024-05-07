@@ -53,11 +53,11 @@ int main(int argc, char **argv) {
   while (1) {
     clientlen = sizeof(clientaddr);
 
-    connfd = Accept(listenfd, (SA *)&clientaddr,
-                    &clientlen);  // line:netp:tiny:accept
+    // connfd = Accept(listenfd, (SA *)&clientaddr,
+    //                 &clientlen);  // line:netp:tiny:accept
 
-    connfdp = Malloc(sizeof(int));
-    *connfdp = Accept(listenfd, (SA *)&clientaddr, &clientlen);  
+    connfd = Malloc(sizeof(int));
+    *connfd = Accept(listenfd, (SA *)&clientaddr, &clientlen);  
     // line:netp:tiny:accept
 
 
@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
     
     doit(connfd);   // line:netp:tiny:doit
 
-    Pthread_create(&tid, NULL, thread, connfdp); 
+    Pthread_create(&tid, NULL, thread, connfd); 
 
     Close(connfd);  // line:netp:tiny:close
   }
