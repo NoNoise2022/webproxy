@@ -16,7 +16,7 @@ static const char *user_agent_hdr =
 static const char *new_version = "HTTP/1.0";
 
 
-void doit(int fd);
+void doit(int connfd);
 void read_requesthdrs(rio_t *rp);
 // int parse_uri(char *uri, char *filename, char *cgiargs);
 void serve_static(int fd, char *filename, int filesize, char *method);
