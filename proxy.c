@@ -8,14 +8,12 @@
  */
 #include "csapp.h"
 
-// void do_response -->>
 #define MAX_CACHE_SIZE 1049000
 
 static const char *user_agent_hdr =
     "User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:10.0.3) Gecko/20120305 "
     "Firefox/10.0.3\r\n";
 static const char *new_version = "HTTP/1.0";
-
 
 
 void doit(int fd);
@@ -31,7 +29,6 @@ void clienterror(int fd, char *cause, char *errnum, char *shortmsg,
 void do_request(int clientfd, char *method, char *uri_ptos, char *host);
 void do_response(int connfd, int clientfd);
 int parse_uri(char *uri, char *uri_ptos, char *host, char *port);
-
 
 
 
@@ -55,95 +52,94 @@ int main(int argc, char **argv) {
     Getnameinfo((SA *)&clientaddr, clientlen, hostname, MAXLINE, port, MAXLINE,
                 0);
     printf("Accepted connection from (%s, %s)\n", hostname, port);
+    
     doit(connfd);   // line:netp:tiny:doit
+
+
     Close(connfd);  // line:netp:tiny:close
   }
 }
 
-//client의 http요청을 처리하는 함수
+
+
 void doit(int fd)
 {
   int clientfd;
 
-
   int is_static;
+  
   struct stat sbuf;
   char buf[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
   char filename[MAXLINE], cgiargs[MAXLINE];
+
+  char uri_ptos[MAXLINE];
+  char host[MAXLINE], port[MAXLINE];
+
+
   rio_t rio;
 
-
-  char host[MAXLINE], port[MAXLINE];
-  char uri_ptos[MAXLINE];
-
-
-   /* Read request line and headers */
+  // Read request line and headers 
   Rio_readinitb(&rio, fd); 
   Rio_readlineb(&rio, buf, MAXLINE); 
-  printf("Request headers:\n");
+
+  printf("Request headers to proxy:\n");
   printf("%s", buf);
   sscanf(buf, "%s %s %s", method, uri, version);
 
-  if(strcmp(method, "GET") && strcmp(method, "HEAD"))
-  {
-    clienterror(fd, method, "501", "Not Implemented",
-                "Tiny does not implement this method");
-    return;
-  }
-  /*
-  if (strcasecmp(method, "GET"))
-  {
-    clienterror(fd, method, "501", "Not Implemented",
-                "Tiny does not implement this method");
-    return;
-  }
-  */
+  // if(strcmp(method, "GET") && strcmp(method, "HEAD"))
+  // {
+  //   clienterror(fd, method, "501", "Not Implemented",
+  //               "Tiny does not implement this method");
+  //   return;
+  // }
+
 
   read_requesthdrs(&rio);
+
+  // Parse URI from GET request 
+  // is_static = parse_uri(uri, filename, cgiargs);
+  
+  parse_uri(uri, uri_ptos, host, port);
+  clientfd = Open_clientfd(host, port);
+
+  do_request(clientfd, method, uri_ptos, host);     // clientfd에 Request headers 저장과 동시에 server의 connfd에 쓰여짐
+  do_response(fd, clientfd);
+
  
-  /* Parse URI from GET request */
-  is_static = parse_uri(uri, filename, cgiargs);
   if (stat(filename, &sbuf) < 0){
     clienterror(fd, filename, "404", "Not found",
                 "Tiny couldn't find this file");
     return;
   }
-
-  parse_uri(uri, uri_ptos, host, port);
-  clientfd = Open_clientfd(host, port);             // clientfd = proxy의 clientfd (연결됨)
-  do_request(clientfd, method, uri_ptos, host);     // clientfd에 Request headers 저장과 동시에 server의 connfd에 쓰여짐
-  do_response(fd, clientfd);
-
-  if (is_static)
-  { /* Serve static content */
-
-    //일반파일이 아니거나, 파일 읽기권한이 없는 경우 403 에러 안내 실행
-    if (!(S_ISREG(sbuf.st_mode)) || !(S_IRUSR & sbuf.st_mode))
-    {
-      clienterror(fd, filename, "403", "Forbidden",
-                  "Tiny couldn't read the file");
-      return;
-    }
-    //일반파일, 읽기권한이 있다면, serve_static 실행
-    serve_static(fd, filename, sbuf.st_size, method);
-  }
-  //동적 컨텐츠를 요청 받았다면, 
-  else
-  { /* Serve dynamic content */
-    // S_IXUSR는 사용자(user)에 대한 실행 권한을 나타내는 상수
-    // st_mode는 stat 구조체에서 파일의 모드를 나타내는 필드
-    // 일반 파일이 아니거나, 실행가능한 파일이 아니거나, 실행 권한이 없는 경우 403에러 안내실행
-    if (!(S_ISREG(sbuf.st_mode)) || !(S_IXUSR & sbuf.st_mode))
-    {
-      clienterror(fd, filename, "403", "Forbidden",
-                  "Tiny couldn't run the CGI program");
-      return;
-    }
-
-    serve_dynamic(fd, filename, cgiargs);
-  }
 }
 
+
+/*
+void do_it(int connfd){
+  int clientfd;
+  char buf[MAXLINE],  host[MAXLINE], port[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
+  char uri_ptos[MAXLINE];
+  rio_t rio;
+
+  Rio_readinitb(&rio, connfd);                      // rio 버퍼와 fd(proxy의 connfd)를 연결시켜준다. 
+  Rio_readlineb(&rio, buf, MAXLINE);                  // 그리고 rio(==proxy의 connfd)에 있는 한 줄(응답 라인)을 모두 buf로 옮긴다. 
+  printf("Request headers to proxy:\n");
+  printf("%s", buf);
+  sscanf(buf, "%s %s %s", method, uri, version);      // buf에서 문자열 3개를 읽어와 각각 method, uri, version이라는 문자열에 저장 
+
+  // Parse URI from GET request 
+  // if (!(parse_uri(uri, uri_ptos, host, port)))
+  //   return -1;
+  parse_uri(uri, uri_ptos, host, port);
+
+  clientfd = Open_clientfd(host, port);             // clientfd = proxy의 clientfd (연결됨)
+
+  do_request(clientfd, method, uri_ptos, host);     // clientfd에 Request headers 저장과 동시에 server의 connfd에 쓰여짐
+
+  do_response(connfd, clientfd);        
+  Close(clientfd);                                  // clientfd 역할 끝
+}
+*/
 
 
 
@@ -163,7 +159,6 @@ void do_request(int clientfd, char *method, char *uri_ptos, char *host){
   /* Rio_writen: buf에서 clientfd로 strlen(buf) 바이트로 전송*/
   Rio_writen(clientfd, buf, (size_t)strlen(buf)); // => 적어주는 행위 자체가 요청하는거야~@!@!
 }
-/* do_response: server => proxy */
 void do_response(int connfd, int clientfd){
   char buf[MAX_CACHE_SIZE];
   ssize_t n;
@@ -173,7 +168,6 @@ void do_response(int connfd, int clientfd){
   n = Rio_readnb(&rio, buf, MAX_CACHE_SIZE);  
   Rio_writen(connfd, buf, n);
 }
-/* parse_uri: Parse URI, Proxy에서 Server로의 GET request를 하기 위해 필요 */
 int parse_uri(char *uri, char *uri_ptos, char *host, char *port){ 
   char *ptr;
 
@@ -222,7 +216,6 @@ int parse_uri(char *uri, char *uri_ptos, char *host, char *port){
 
 
 
-
 // HTTP 클라이언트에게 오류 응답을 보내기 위한 함수.
 void clienterror(int fd, char *cause, char *errnum, char *shortmsg,char *longmsg)
 {
@@ -260,14 +253,14 @@ void read_requesthdrs(rio_t *rp)
   }
   return;
 }
-
 /*
 int parse_uri(char *uri, char *filename, char *cgiargs)
 {
   char *ptr;
 
   if (!strstr(uri, "cgi-bin"))
-  { // Static content 
+  { 
+    // Static content 
     strcpy(cgiargs, "");
     strcpy(filename, ".");
     strcat(filename, uri);
@@ -293,6 +286,7 @@ int parse_uri(char *uri, char *filename, char *cgiargs)
 }
 */
 
+
 void serve_static(int fd, char *filename, int filesize, char *method)
 {
   int srcfd;
@@ -317,7 +311,7 @@ void serve_static(int fd, char *filename, int filesize, char *method)
   /*
   if (!strcmp(method, "GET")) 
   {
-	  srcfd = Open(filename, O_RDONLY, 0);
+     srcfd = Open(filename, O_RDONLY, 0);
     srcp = (char *)malloc(sizeof(filesize));
     Rio_readn(srcfd, srcp, filesize);
     Close(srcfd);
