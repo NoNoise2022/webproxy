@@ -100,7 +100,7 @@ void doit(int fd)
   clientfd = Open_clientfd(host, port);
 
   do_request(clientfd, method, uri_ptos, host);     // clientfd에 Request headers 저장과 동시에 server의 connfd에 쓰여짐
-  do_response(connfd, clientfd);
+  do_response(fd, clientfd);
 
  
   if (stat(filename, &sbuf) < 0){
