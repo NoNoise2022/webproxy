@@ -53,10 +53,18 @@ int main(int argc, char **argv) {
 
 void doit(int fd)
 {
+  int clientfd;
+  
   int is_static;
+  
   struct stat sbuf;
   char buf[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
   char filename[MAXLINE], cgiargs[MAXLINE];
+
+  char uri_ptos[MAXLINE];
+  char host[MAXLINE], port[MAXLINE];
+
+
   rio_t rio;
 
    /* Read request line and headers */
