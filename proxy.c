@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
 }
 
 
-
+/*
 void doit(int fd)
 {
   int clientfd;
@@ -76,7 +76,7 @@ void doit(int fd)
 
   rio_t rio;
 
-   /* Read request line and headers */
+  // Read request line and headers 
   Rio_readinitb(&rio, fd); 
   Rio_readlineb(&rio, buf, MAXLINE); 
   printf("Request headers:\n");
@@ -92,13 +92,14 @@ void doit(int fd)
 
 
   read_requesthdrs(&rio);
- 
-  /* Parse URI from GET request */
+
+  // Parse URI from GET request 
   is_static = parse_uri(uri, filename, cgiargs);
  
   clientfd = Open_clientfd(host, port);
 
-  do_request(clientfd, method, uri_ptos, host);     // clientfd에 Request headers 저장과 동시에 server의 connfd에 쓰여짐
+  do_request(clientfd, method, uri_ptos, host);     
+  // clientfd에 Request headers 저장과 동시에 server의 connfd에 쓰여짐
   
 
  
@@ -107,10 +108,9 @@ void doit(int fd)
                 "Tiny couldn't find this file");
     return;
   }
-
 }
+*/
 
-/*
 void do_it(int connfd){
   int clientfd;
   char buf[MAXLINE],  host[MAXLINE], port[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
@@ -126,7 +126,7 @@ void do_it(int connfd){
   // Parse URI from GET request 
   // if (!(parse_uri(uri, uri_ptos, host, port)))
   //   return -1;
-  parse_uri(uri, uri_ptos, host, port);
+  // parse_uri(uri, uri_ptos, host, port);
 
   clientfd = Open_clientfd(host, port);             // clientfd = proxy의 clientfd (연결됨)
 
@@ -135,7 +135,7 @@ void do_it(int connfd){
   do_response(connfd, clientfd);        
   Close(clientfd);                                  // clientfd 역할 끝
 }
-*/
+
 
 
 
