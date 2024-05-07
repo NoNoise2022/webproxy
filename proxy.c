@@ -79,6 +79,8 @@ void doit(int fd)
   /* Parse URI from GET request */
   is_static = parse_uri(uri, filename, cgiargs);
  
+  clientfd = Open_clientfd(host, port);
+
   do_request(clientfd, method, uri_ptos, host);     // clientfd에 Request headers 저장과 동시에 server의 connfd에 쓰여짐
   
 
