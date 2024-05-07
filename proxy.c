@@ -8,6 +8,8 @@
  */
 #include "csapp.h"
 
+// void do_response -->>
+#define MAX_CACHE_SIZE 1049000
 
 static const char *user_agent_hdr =
     "User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:10.0.3) Gecko/20120305 "
@@ -18,7 +20,7 @@ static const char *new_version = "HTTP/1.0";
 
 void doit(int fd);
 void read_requesthdrs(rio_t *rp);
-int parse_uri(char *uri, char *filename, char *cgiargs);
+// int parse_uri(char *uri, char *filename, char *cgiargs);
 void serve_static(int fd, char *filename, int filesize, char *method);
 void get_filetype(char *filename, char *filetype);
 void serve_dynamic(int fd, char *filename, char *cgiargs);
@@ -28,6 +30,7 @@ void clienterror(int fd, char *cause, char *errnum, char *shortmsg,
 
 void do_request(int clientfd, char *method, char *uri_ptos, char *host);
 void do_response(int connfd, int clientfd);
+int parse_uri(char *uri, char *uri_ptos, char *host, char *port);
 
 
 
@@ -106,7 +109,7 @@ void doit(int fd)
     return;
   }
 
-
+  parse_uri(uri, uri_ptos, host, port);
   clientfd = Open_clientfd(host, port);             // clientfd = proxy의 clientfd (연결됨)
   do_request(clientfd, method, uri_ptos, host);     // clientfd에 Request headers 저장과 동시에 server의 connfd에 쓰여짐
   do_response(fd, clientfd);
@@ -170,6 +173,49 @@ void do_response(int connfd, int clientfd){
   n = Rio_readnb(&rio, buf, MAX_CACHE_SIZE);  
   Rio_writen(connfd, buf, n);
 }
+/* parse_uri: Parse URI, Proxy에서 Server로의 GET request를 하기 위해 필요 */
+int parse_uri(char *uri, char *uri_ptos, char *host, char *port){ 
+  char *ptr;
+
+  /* 필요없는 http:// 부분 잘라서 host 추출 */
+  if (!(ptr = strstr(uri, "://"))) 
+    return -1;                        // ://가 없으면 unvalid uri 
+  ptr += 3;                       
+  strcpy(host, ptr);                  // host = www.google.com:80/index.html
+
+  /* uri_ptos(proxy => server로 보낼 uri) 추출 */
+  if((ptr = strchr(host, '/'))){  
+    *ptr = '\0';                      // host = www.google.com:80
+    ptr += 1;
+    strcpy(uri_ptos, "/");            // uri_ptos = /
+    strcat(uri_ptos, ptr);            // uri_ptos = /index.html
+  }
+  else strcpy(uri_ptos, "/");
+
+  /* port 추출 */
+  if ((ptr = strchr(host, ':'))){     // host = www.google.com:80
+    *ptr = '\0';                      // host = www.google.com
+    ptr += 1;     
+    strcpy(port, ptr);                // port = 80
+  }  
+  else strcpy(port, "80");            // port가 없을 경우 "80"을 넣어줌
+
+  /* 
+  Before Parsing (Client로부터 받은 Request Line)
+  => GET http://www.google.com:80/index.html HTTP/1.1
+
+  Result Parsing (순차적으로 host, uri_ptos, port으로 파싱됨)
+  => host = www.google.com
+  => uri_ptos = /index.html
+  => port = 80
+
+  After Parsing (Server로 보낼 Request Line)
+  => GET /index.html HTTP/11. 
+  */ 
+
+  return 0; // function int return => for valid check
+}
+
 
 
 
@@ -215,12 +261,13 @@ void read_requesthdrs(rio_t *rp)
   return;
 }
 
+/*
 int parse_uri(char *uri, char *filename, char *cgiargs)
 {
   char *ptr;
 
   if (!strstr(uri, "cgi-bin"))
-  { /* Static content */
+  { // Static content 
     strcpy(cgiargs, "");
     strcpy(filename, ".");
     strcat(filename, uri);
@@ -229,7 +276,7 @@ int parse_uri(char *uri, char *filename, char *cgiargs)
     return 1;
   }
   else
-  { /* Dynamic content */
+  { // Dynamic content 
     ptr = index(uri, '?');
     if (ptr)
     {
@@ -244,6 +291,7 @@ int parse_uri(char *uri, char *filename, char *cgiargs)
     return 0;
   }
 }
+*/
 
 void serve_static(int fd, char *filename, int filesize, char *method)
 {
