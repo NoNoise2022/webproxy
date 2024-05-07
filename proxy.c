@@ -18,7 +18,7 @@ static const char *new_version = "HTTP/1.0";
 
 void doit(int fd);
 void read_requesthdrs(rio_t *rp);
-int parse_uri(char *uri, char *filename, char *cgiargs);
+// int parse_uri(char *uri, char *filename, char *cgiargs);
 void serve_static(int fd, char *filename, int filesize, char *method);
 void get_filetype(char *filename, char *filetype);
 void serve_dynamic(int fd, char *filename, char *cgiargs);
@@ -28,6 +28,8 @@ void clienterror(int fd, char *cause, char *errnum, char *shortmsg,
 
 void do_request(int clientfd, char *method, char *uri_ptos, char *host);
 void do_response(int connfd, int clientfd);
+int parse_uri(char *uri, char *uri_ptos, char *host, char *port);
+
 
 
 int main(int argc, char **argv) {
@@ -251,13 +253,14 @@ void read_requesthdrs(rio_t *rp)
   }
   return;
 }
-
+/*
 int parse_uri(char *uri, char *filename, char *cgiargs)
 {
   char *ptr;
 
   if (!strstr(uri, "cgi-bin"))
-  { /* Static content */
+  { 
+    // Static content 
     strcpy(cgiargs, "");
     strcpy(filename, ".");
     strcat(filename, uri);
@@ -266,7 +269,7 @@ int parse_uri(char *uri, char *filename, char *cgiargs)
     return 1;
   }
   else
-  { /* Dynamic content */
+  { // Dynamic content 
     ptr = index(uri, '?');
     if (ptr)
     {
@@ -281,6 +284,8 @@ int parse_uri(char *uri, char *filename, char *cgiargs)
     return 0;
   }
 }
+*/
+
 
 void serve_static(int fd, char *filename, int filesize, char *method)
 {
