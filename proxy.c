@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
 }
 
 
-/*
+
 void doit(int fd)
 {
   int clientfd;
@@ -79,16 +79,17 @@ void doit(int fd)
   // Read request line and headers 
   Rio_readinitb(&rio, fd); 
   Rio_readlineb(&rio, buf, MAXLINE); 
-  printf("Request headers:\n");
+
+  printf("Request headers to proxy:\n");
   printf("%s", buf);
   sscanf(buf, "%s %s %s", method, uri, version);
 
-  if(strcmp(method, "GET") && strcmp(method, "HEAD"))
-  {
-    clienterror(fd, method, "501", "Not Implemented",
-                "Tiny does not implement this method");
-    return;
-  }
+  // if(strcmp(method, "GET") && strcmp(method, "HEAD"))
+  // {
+  //   clienterror(fd, method, "501", "Not Implemented",
+  //               "Tiny does not implement this method");
+  //   return;
+  // }
 
 
   read_requesthdrs(&rio);
@@ -98,9 +99,8 @@ void doit(int fd)
  
   clientfd = Open_clientfd(host, port);
 
-  do_request(clientfd, method, uri_ptos, host);     
-  // clientfd에 Request headers 저장과 동시에 server의 connfd에 쓰여짐
-  
+  do_request(clientfd, method, uri_ptos, host);     // clientfd에 Request headers 저장과 동시에 server의 connfd에 쓰여짐
+  do_response(connfd, clientfd);
 
  
   if (stat(filename, &sbuf) < 0){
@@ -109,8 +109,9 @@ void doit(int fd)
     return;
   }
 }
-*/
 
+
+/*
 void do_it(int connfd){
   int clientfd;
   char buf[MAXLINE],  host[MAXLINE], port[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
@@ -126,7 +127,7 @@ void do_it(int connfd){
   // Parse URI from GET request 
   // if (!(parse_uri(uri, uri_ptos, host, port)))
   //   return -1;
-  // parse_uri(uri, uri_ptos, host, port);
+  parse_uri(uri, uri_ptos, host, port);
 
   clientfd = Open_clientfd(host, port);             // clientfd = proxy의 clientfd (연결됨)
 
@@ -135,7 +136,7 @@ void do_it(int connfd){
   do_response(connfd, clientfd);        
   Close(clientfd);                                  // clientfd 역할 끝
 }
-
+*/
 
 
 
