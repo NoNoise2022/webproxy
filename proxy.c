@@ -60,11 +60,19 @@ int main(int argc, char **argv) {
 //client의 http요청을 처리하는 함수
 void doit(int fd)
 {
+  int clientfd;
+
+
   int is_static;
   struct stat sbuf;
   char buf[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
   char filename[MAXLINE], cgiargs[MAXLINE];
   rio_t rio;
+
+
+  char host[MAXLINE], port[MAXLINE];
+  char uri_ptos[MAXLINE];
+
 
    /* Read request line and headers */
   Rio_readinitb(&rio, fd); 
