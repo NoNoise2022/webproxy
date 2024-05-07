@@ -8,6 +8,7 @@
  */
 #include "csapp.h"
 
+#define MAX_CACHE_SIZE 1049000
 
 static const char *user_agent_hdr =
     "User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:10.0.3) Gecko/20120305 "
@@ -26,6 +27,7 @@ void clienterror(int fd, char *cause, char *errnum, char *shortmsg,
 
 
 void do_request(int clientfd, char *method, char *uri_ptos, char *host);
+void do_response(int connfd, int clientfd);
 
 
 int main(int argc, char **argv) {
@@ -153,7 +155,15 @@ void do_request(int clientfd, char *method, char *uri_ptos, char *host){
   /* Rio_writen: buf에서 clientfd로 strlen(buf) 바이트로 전송*/
   Rio_writen(clientfd, buf, (size_t)strlen(buf)); // => 적어주는 행위 자체가 요청하는거야~@!@!
 }
+void do_response(int connfd, int clientfd){
+  char buf[MAX_CACHE_SIZE];
+  ssize_t n;
+  rio_t rio;
 
+  Rio_readinitb(&rio, clientfd);  
+  n = Rio_readnb(&rio, buf, MAX_CACHE_SIZE);  
+  Rio_writen(connfd, buf, n);
+}
 
 
 
