@@ -8,6 +8,13 @@
  */
 #include "csapp.h"
 
+
+static const char *user_agent_hdr =
+    "User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:10.0.3) Gecko/20120305 "
+    "Firefox/10.0.3\r\n";
+static const char *new_version = "HTTP/1.0";
+
+
 void doit(int fd);
 void read_requesthdrs(rio_t *rp);
 int parse_uri(char *uri, char *filename, char *cgiargs);
@@ -54,7 +61,7 @@ int main(int argc, char **argv) {
 void doit(int fd)
 {
   int clientfd;
-  
+
   int is_static;
   
   struct stat sbuf;
