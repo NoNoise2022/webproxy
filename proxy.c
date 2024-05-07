@@ -18,28 +18,8 @@ void clienterror(int fd, char *cause, char *errnum, char *shortmsg,
                  char *longmsg);
 
 
-void proxy(int clientfd);
-void parse_request(int clientfd, char *method, char *path, char *hostname, uint16_t *port);
-void resolve_hostname(const char *hostname, struct in_addr *addr);
-void forward_request(int clientfd, const char *ip, uint16_t port, const char *method, const char *path);
+void do_request(int clientfd, char *method, char *uri_ptos, char *host);
 
-
-/*
-Web Proxy 구현
-클라이언트의 요청을 받아 ip, port, method, path 읽기
-동일 호스트가 dotted ingeter, hostname으로 표기될 수 있음을 처리하기 위해 Getaddrinfo, Getnameinfo를 사용해 모두 uint32_t 타입 ip주소로 변환하였습니다. (+사이즈 감소)
-포트는 uint16_t 으로 변환하였습니다.
-method는 enum type을 정의하여 처리했습니다.
-*/
-//
-#define MAXLINE 1024
-#define MAXBUF 8192
-//
-enum Method {
-    GET,
-    POST,
-    // Add other HTTP methods as needed
-};
 
 int main(int argc, char **argv) {
   int listenfd, connfd;
@@ -62,46 +42,15 @@ int main(int argc, char **argv) {
                 0);
     printf("Accepted connection from (%s, %s)\n", hostname, port);
     
-    // doit(connfd);   // line:netp:tiny:doit
-    proxy(connfd);
+    doit(connfd);   // line:netp:tiny:doit
+
 
     Close(connfd);  // line:netp:tiny:close
   }
 }
 
-void proxy(int clientfd) {
-    char method[MAXLINE], path[MAXLINE], hostname[MAXLINE];
-    uint16_t port;
-
-    parse_request(clientfd, method, path, hostname, &port);
-
-    struct in_addr addr;
-    resolve_hostname(hostname, &addr);
-    char ip[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &addr, ip, INET_ADDRSTRLEN);
-
-    forward_request(clientfd, ip, port, method, path);
-}
-
-void parse_request(int clientfd, char *method, char *path, char *hostname, uint16_t *port) {
-    // Implement parsing of HTTP request headers to extract method, path, hostname, and port
-}
-
-void resolve_hostname(const char *hostname, struct in_addr *addr) {
-    // Implement resolving hostname to IP address
-}
-
-void forward_request(int clientfd, const char *ip, uint16_t port, const char *method, const char *path) {
-    // Implement forwarding the HTTP request to the remote server
-    // and forwarding the response back to the client
-}
 
 
-
-
-
-
-//client의 http요청을 처리하는 함수
 void doit(int fd)
 {
   int is_static;
@@ -123,54 +72,75 @@ void doit(int fd)
                 "Tiny does not implement this method");
     return;
   }
-  /*
-  if (strcasecmp(method, "GET"))
-  {
-    clienterror(fd, method, "501", "Not Implemented",
-                "Tiny does not implement this method");
-    return;
-  }
-  */
+
 
   read_requesthdrs(&rio);
  
   /* Parse URI from GET request */
   is_static = parse_uri(uri, filename, cgiargs);
+ 
+  do_request(clientfd, method, uri_ptos, host);     // clientfd에 Request headers 저장과 동시에 server의 connfd에 쓰여짐
+  
+
+ 
   if (stat(filename, &sbuf) < 0){
     clienterror(fd, filename, "404", "Not found",
                 "Tiny couldn't find this file");
     return;
   }
 
-  if (is_static)
-  { /* Serve static content */
-
-    //일반파일이 아니거나, 파일 읽기권한이 없는 경우 403 에러 안내 실행
-    if (!(S_ISREG(sbuf.st_mode)) || !(S_IRUSR & sbuf.st_mode))
-    {
-      clienterror(fd, filename, "403", "Forbidden",
-                  "Tiny couldn't read the file");
-      return;
-    }
-    //일반파일, 읽기권한이 있다면, serve_static 실행
-    serve_static(fd, filename, sbuf.st_size, method);
-  }
-  //동적 컨텐츠를 요청 받았다면, 
-  else
-  { /* Serve dynamic content */
-    // S_IXUSR는 사용자(user)에 대한 실행 권한을 나타내는 상수
-    // st_mode는 stat 구조체에서 파일의 모드를 나타내는 필드
-    // 일반 파일이 아니거나, 실행가능한 파일이 아니거나, 실행 권한이 없는 경우 403에러 안내실행
-    if (!(S_ISREG(sbuf.st_mode)) || !(S_IXUSR & sbuf.st_mode))
-    {
-      clienterror(fd, filename, "403", "Forbidden",
-                  "Tiny couldn't run the CGI program");
-      return;
-    }
-
-    serve_dynamic(fd, filename, cgiargs);
-  }
 }
+
+/*
+void do_it(int connfd){
+  int clientfd;
+  char buf[MAXLINE],  host[MAXLINE], port[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
+  char uri_ptos[MAXLINE];
+  rio_t rio;
+
+  Rio_readinitb(&rio, connfd);                      // rio 버퍼와 fd(proxy의 connfd)를 연결시켜준다. 
+  Rio_readlineb(&rio, buf, MAXLINE);                  // 그리고 rio(==proxy의 connfd)에 있는 한 줄(응답 라인)을 모두 buf로 옮긴다. 
+  printf("Request headers to proxy:\n");
+  printf("%s", buf);
+  sscanf(buf, "%s %s %s", method, uri, version);      // buf에서 문자열 3개를 읽어와 각각 method, uri, version이라는 문자열에 저장 
+
+  // Parse URI from GET request 
+  // if (!(parse_uri(uri, uri_ptos, host, port)))
+  //   return -1;
+  parse_uri(uri, uri_ptos, host, port);
+
+  clientfd = Open_clientfd(host, port);             // clientfd = proxy의 clientfd (연결됨)
+
+  do_request(clientfd, method, uri_ptos, host);     // clientfd에 Request headers 저장과 동시에 server의 connfd에 쓰여짐
+
+  do_response(connfd, clientfd);        
+  Close(clientfd);                                  // clientfd 역할 끝
+}
+*/
+
+
+
+/* do_request: proxy => server */
+void do_request(int clientfd, char *method, char *uri_ptos, char *host){
+  char buf[MAXLINE];
+  printf("Request headers to server: \n");     
+  printf("%s %s %s\n", method, uri_ptos, new_version);
+
+  /* Read request headers */        
+  sprintf(buf, "GET %s %s\r\n", uri_ptos, new_version);     // GET /index.html HTTP/1.0
+  sprintf(buf, "%sHost: %s\r\n", buf, host);                // Host: www.google.com     
+  sprintf(buf, "%s%s", buf, user_agent_hdr);                // User-Agent: ~(bla bla)
+  sprintf(buf, "%sConnections: close\r\n", buf);            // Connections: close
+  sprintf(buf, "%sProxy-Connection: close\r\n\r\n", buf);   // Proxy-Connection: close
+
+  /* Rio_writen: buf에서 clientfd로 strlen(buf) 바이트로 전송*/
+  Rio_writen(clientfd, buf, (size_t)strlen(buf)); // => 적어주는 행위 자체가 요청하는거야~@!@!
+}
+
+
+
+
+
 
 // HTTP 클라이언트에게 오류 응답을 보내기 위한 함수.
 void clienterror(int fd, char *cause, char *errnum, char *shortmsg,char *longmsg)
