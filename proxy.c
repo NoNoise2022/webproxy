@@ -8,6 +8,14 @@
  */
 #include "csapp.h"
 
+
+static const char *user_agent_hdr =
+    "User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:10.0.3) Gecko/20120305 "
+    "Firefox/10.0.3\r\n";
+static const char *new_version = "HTTP/1.0";
+
+
+
 void doit(int fd);
 void read_requesthdrs(rio_t *rp);
 int parse_uri(char *uri, char *filename, char *cgiargs);
@@ -16,6 +24,13 @@ void get_filetype(char *filename, char *filetype);
 void serve_dynamic(int fd, char *filename, char *cgiargs);
 void clienterror(int fd, char *cause, char *errnum, char *shortmsg,
                  char *longmsg);
+
+
+void do_request(int clientfd, char *method, char *uri_ptos, char *host);
+// void do_response(int connfd, int clientfd);
+
+
+
 
 int main(int argc, char **argv) {
   int listenfd, connfd;
@@ -83,6 +98,11 @@ void doit(int fd)
     return;
   }
 
+
+  clientfd = Open_clientfd(host, port);             // clientfd = proxy의 clientfd (연결됨)
+  do_request(clientfd, method, uri_ptos, host);     // clientfd에 Request headers 저장과 동시에 server의 connfd에 쓰여짐
+
+
   if (is_static)
   { /* Serve static content */
 
@@ -112,6 +132,31 @@ void doit(int fd)
     serve_dynamic(fd, filename, cgiargs);
   }
 }
+
+
+
+
+/* do_request: proxy => server */
+void do_request(int clientfd, char *method, char *uri_ptos, char *host){
+  char buf[MAXLINE];
+  printf("Request headers to server: \n");     
+  printf("%s %s %s\n", method, uri_ptos, new_version);
+
+  /* Read request headers */        
+  sprintf(buf, "GET %s %s\r\n", uri_ptos, new_version);     // GET /index.html HTTP/1.0
+  sprintf(buf, "%sHost: %s\r\n", buf, host);                // Host: www.google.com     
+  sprintf(buf, "%s%s", buf, user_agent_hdr);                // User-Agent: ~(bla bla)
+  sprintf(buf, "%sConnections: close\r\n", buf);            // Connections: close
+  sprintf(buf, "%sProxy-Connection: close\r\n\r\n", buf);   // Proxy-Connection: close
+
+  /* Rio_writen: buf에서 clientfd로 strlen(buf) 바이트로 전송*/
+  Rio_writen(clientfd, buf, (size_t)strlen(buf)); // => 적어주는 행위 자체가 요청하는거야~@!@!
+}
+
+
+
+
+
 
 // HTTP 클라이언트에게 오류 응답을 보내기 위한 함수.
 void clienterror(int fd, char *cause, char *errnum, char *shortmsg,char *longmsg)
