@@ -16,7 +16,7 @@ static const char *user_agent_hdr =
 static const char *new_version = "HTTP/1.0";
 
 
-void doit(int connfd);
+void doit(int fd);
 void read_requesthdrs(rio_t *rp);
 // int parse_uri(char *uri, char *filename, char *cgiargs);
 void serve_static(int fd, char *filename, int filesize, char *method);
@@ -228,7 +228,7 @@ void *thread(void *vargp){
   int connfd = *((int *)vargp);
   Pthread_detach(pthread_self());
   Free(vargp);
-  do_it(connfd);
+  doit(connfd);
   Close(connfd);
   return NULL;
 }
