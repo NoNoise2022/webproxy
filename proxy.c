@@ -33,7 +33,7 @@ void *thread(void *vargp);
 
 
 int main(int argc, char **argv) {
-  int listenfd, connfd;
+  int listenfd, *connfd;
   char hostname[MAXLINE], port[MAXLINE];
   socklen_t clientlen;
   struct sockaddr_storage clientaddr;
@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
 
     Pthread_create(&tid, NULL, thread, connfd); 
 
-    Close(connfd);  // line:netp:tiny:close
+    // Close(connfd);  // line:netp:tiny:close
   }
 }
 
