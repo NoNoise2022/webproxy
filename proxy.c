@@ -27,7 +27,7 @@ void clienterror(int fd, char *cause, char *errnum, char *shortmsg,
 
 
 void do_request(int clientfd, char *method, char *uri_ptos, char *host);
-// void do_response(int connfd, int clientfd);
+void do_response(int connfd, int clientfd);
 
 
 
@@ -109,7 +109,7 @@ void doit(int fd)
 
   clientfd = Open_clientfd(host, port);             // clientfd = proxy의 clientfd (연결됨)
   do_request(clientfd, method, uri_ptos, host);     // clientfd에 Request headers 저장과 동시에 server의 connfd에 쓰여짐
-
+  do_response(fd, clientfd);
 
   if (is_static)
   { /* Serve static content */
@@ -160,6 +160,17 @@ void do_request(int clientfd, char *method, char *uri_ptos, char *host){
   /* Rio_writen: buf에서 clientfd로 strlen(buf) 바이트로 전송*/
   Rio_writen(clientfd, buf, (size_t)strlen(buf)); // => 적어주는 행위 자체가 요청하는거야~@!@!
 }
+/* do_response: server => proxy */
+void do_response(int connfd, int clientfd){
+  char buf[MAX_CACHE_SIZE];
+  ssize_t n;
+  rio_t rio;
+
+  Rio_readinitb(&rio, clientfd);  
+  n = Rio_readnb(&rio, buf, MAX_CACHE_SIZE);  
+  Rio_writen(connfd, buf, n);
+}
+
 
 
 
