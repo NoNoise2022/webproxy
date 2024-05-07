@@ -17,6 +17,30 @@ void serve_dynamic(int fd, char *filename, char *cgiargs);
 void clienterror(int fd, char *cause, char *errnum, char *shortmsg,
                  char *longmsg);
 
+
+void proxy(int clientfd);
+void parse_request(int clientfd, char *method, char *path, char *hostname, uint16_t *port);
+void resolve_hostname(const char *hostname, struct in_addr *addr);
+void forward_request(int clientfd, const char *ip, uint16_t port, const char *method, const char *path);
+
+
+/*
+Web Proxy 구현
+클라이언트의 요청을 받아 ip, port, method, path 읽기
+동일 호스트가 dotted ingeter, hostname으로 표기될 수 있음을 처리하기 위해 Getaddrinfo, Getnameinfo를 사용해 모두 uint32_t 타입 ip주소로 변환하였습니다. (+사이즈 감소)
+포트는 uint16_t 으로 변환하였습니다.
+method는 enum type을 정의하여 처리했습니다.
+*/
+//
+#define MAXLINE 1024
+#define MAXBUF 8192
+//
+enum Method {
+    GET,
+    POST,
+    // Add other HTTP methods as needed
+};
+
 int main(int argc, char **argv) {
   int listenfd, connfd;
   char hostname[MAXLINE], port[MAXLINE];
@@ -37,10 +61,45 @@ int main(int argc, char **argv) {
     Getnameinfo((SA *)&clientaddr, clientlen, hostname, MAXLINE, port, MAXLINE,
                 0);
     printf("Accepted connection from (%s, %s)\n", hostname, port);
-    doit(connfd);   // line:netp:tiny:doit
+    
+    // doit(connfd);   // line:netp:tiny:doit
+    proxy(connfd);
+
     Close(connfd);  // line:netp:tiny:close
   }
 }
+
+void proxy(int clientfd) {
+    char method[MAXLINE], path[MAXLINE], hostname[MAXLINE];
+    uint16_t port;
+
+    parse_request(clientfd, method, path, hostname, &port);
+
+    struct in_addr addr;
+    resolve_hostname(hostname, &addr);
+    char ip[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &addr, ip, INET_ADDRSTRLEN);
+
+    forward_request(clientfd, ip, port, method, path);
+}
+
+void parse_request(int clientfd, char *method, char *path, char *hostname, uint16_t *port) {
+    // Implement parsing of HTTP request headers to extract method, path, hostname, and port
+}
+
+void resolve_hostname(const char *hostname, struct in_addr *addr) {
+    // Implement resolving hostname to IP address
+}
+
+void forward_request(int clientfd, const char *ip, uint16_t port, const char *method, const char *path) {
+    // Implement forwarding the HTTP request to the remote server
+    // and forwarding the response back to the client
+}
+
+
+
+
+
 
 //client의 http요청을 처리하는 함수
 void doit(int fd)
