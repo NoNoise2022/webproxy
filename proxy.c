@@ -95,8 +95,9 @@ void doit(int fd)
   read_requesthdrs(&rio);
 
   // Parse URI from GET request 
-  is_static = parse_uri(uri, filename, cgiargs);
- 
+  // is_static = parse_uri(uri, filename, cgiargs);
+  
+  parse_uri(uri, uri_ptos, host, port);
   clientfd = Open_clientfd(host, port);
 
   do_request(clientfd, method, uri_ptos, host);     // clientfd에 Request headers 저장과 동시에 server의 connfd에 쓰여짐
@@ -165,6 +166,49 @@ void do_response(int connfd, int clientfd){
   n = Rio_readnb(&rio, buf, MAX_CACHE_SIZE);  
   Rio_writen(connfd, buf, n);
 }
+int parse_uri(char *uri, char *uri_ptos, char *host, char *port){ 
+  char *ptr;
+
+  /* 필요없는 http:// 부분 잘라서 host 추출 */
+  if (!(ptr = strstr(uri, "://"))) 
+    return -1;                        // ://가 없으면 unvalid uri 
+  ptr += 3;                       
+  strcpy(host, ptr);                  // host = www.google.com:80/index.html
+
+  /* uri_ptos(proxy => server로 보낼 uri) 추출 */
+  if((ptr = strchr(host, '/'))){  
+    *ptr = '\0';                      // host = www.google.com:80
+    ptr += 1;
+    strcpy(uri_ptos, "/");            // uri_ptos = /
+    strcat(uri_ptos, ptr);            // uri_ptos = /index.html
+  }
+  else strcpy(uri_ptos, "/");
+
+  /* port 추출 */
+  if ((ptr = strchr(host, ':'))){     // host = www.google.com:80
+    *ptr = '\0';                      // host = www.google.com
+    ptr += 1;     
+    strcpy(port, ptr);                // port = 80
+  }  
+  else strcpy(port, "80");            // port가 없을 경우 "80"을 넣어줌
+
+  /* 
+  Before Parsing (Client로부터 받은 Request Line)
+  => GET http://www.google.com:80/index.html HTTP/1.1
+
+  Result Parsing (순차적으로 host, uri_ptos, port으로 파싱됨)
+  => host = www.google.com
+  => uri_ptos = /index.html
+  => port = 80
+
+  After Parsing (Server로 보낼 Request Line)
+  => GET /index.html HTTP/11. 
+  */ 
+
+  return 0; // function int return => for valid check
+}
+
+
 
 
 
