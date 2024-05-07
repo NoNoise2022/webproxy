@@ -52,8 +52,17 @@ int main(int argc, char **argv) {
   listenfd = Open_listenfd(argv[1]);
   while (1) {
     clientlen = sizeof(clientaddr);
+
     connfd = Accept(listenfd, (SA *)&clientaddr,
                     &clientlen);  // line:netp:tiny:accept
+
+    connfdp = Malloc(sizeof(int));
+    *connfdp = Accept(listenfd, (SA *)&clientaddr, &clientlen);  
+    // line:netp:tiny:accept
+
+
+
+
     Getnameinfo((SA *)&clientaddr, clientlen, hostname, MAXLINE, port, MAXLINE,
                 0);
     printf("Accepted connection from (%s, %s)\n", hostname, port);
